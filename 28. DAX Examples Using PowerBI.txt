@@ -1,0 +1,54 @@
+Total Sales:Total Sales =
+SUMX (
+    SalesOrderDetail,
+    SalesOrderDetail[OrderQty] * SalesOrderDetail[UnitPrice]
+        * ( 1 - SalesOrderDetail[UnitPriceDiscount] )
+)
+This measure calculates the total sales amount by iterating through each row in the SalesOrderDetail table and multiplying the quantity by the unit price (adjusted for any discounts).
+
+Sales Amount by Product Category:
+
+Sales by Category =
+SUMX (
+    RELATEDTABLE ( SalesOrderDetail ),
+    SalesOrderDetail[OrderQty] * SalesOrderDetail[UnitPrice]
+        * ( 1 - SalesOrderDetail[UnitPriceDiscount] )
+)
+To use this, you'd typically have a Product table related to SalesOrderDetail.This measure calculates sales, but it would be used in a Power BI visual (like a bar chart) where you've grouped the data by product category.  Power BI's filter context will make it work.
+
+Customer Sales:
+
+Customer Sales =
+CALCULATE (
+    [Total Sales],
+    FILTER (
+        Customer,
+        Customer[CustomerID] = SELECTEDVALUE ( Customer[CustomerID] )
+    )
+)
+This calculates the total sales for the selected customer.  SELECTEDVALUE is important to get the CustomerID from the current filter context in a visual.
+
+Year-to-Date Sales:
+
+YTD Sales =
+TOTALYTD (
+    [Total Sales],
+    SalesOrderHeader[OrderDate],
+    "30/6"  // Assuming fiscal year ends on June 30th
+)
+This calculates the year-to-date sales, using the OrderDate from the SalesOrderHeader table.The "30/6" argument specifies June 30th as the fiscal year end.
+
+Previous Year Sales:
+
+Previous Year Sales =
+CALCULATE (
+    [Total Sales],
+    SAMEPERIODLASTYEAR ( SalesOrderHeader[OrderDate] )
+)
+Calculates the sales for the same period in the previous year.Sales Growth:Sales Growth =
+IF (
+    NOT ISBLANK ( [Previous Year Sales] ),
+    ( [Total Sales] - [Previous Year Sales] ) / [Previous Year Sales],
+    0
+)
+Calculates the growth in sales compared to the previous year.
